@@ -1101,9 +1101,11 @@ function openShoppingList() {
 
   if (ingredientMap.size) {
     html += `<div class="shop-section-title">מרכיבים</div>`;
-    ingredientMap.forEach(entry => {
-      html += `<div class="shop-item">${formatIngredient(entry)}</div>`;
-    });
+    [...ingredientMap.values()]
+      .sort((a, b) => a.name.localeCompare(b.name, 'he'))
+      .forEach(entry => {
+        html += `<div class="shop-item">${formatIngredient(entry)}</div>`;
+      });
   }
 
   if (pantrySet.size) {
