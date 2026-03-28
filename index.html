@@ -978,11 +978,21 @@ function showWelcome() {
 // ── SHOPPING LIST ─────────────────────────────────────────────────────────
 const selectedRecipes = new Set();
 
+// Skip these entirely
+const SKIP_KEYWORDS = ['מים'];
 // Pantry staples: show as "required" without amount
-const PANTRY_KEYWORDS = ['מלח', 'סוכר', 'כמון', 'פפריקה', 'חומץ'];
+const PANTRY_KEYWORDS = ['מלח', 'סוכר', 'כמון', 'פפריקה', 'חומץ', 'שמן'];
+// Descriptors to strip from ingredient names before deduplication
+const STRIP_WORDS = ['כתוש', 'טרי', 'טרייה', 'קצוץ', 'קצוצה', 'קצוצים', 'מגוררת', 'מגורר', 'מסונן', 'סחוט'];
 
+function isSkip(ingredient) {
+  return SKIP_KEYWORDS.some(k => ingredient.includes(k));
+}
 function isPantry(ingredient) {
   return PANTRY_KEYWORDS.some(k => ingredient.includes(k));
+}
+function normalizeName(name) {
+  return STRIP_WORDS.reduce((s, w) => s.replace(new RegExp('\\s*' + w + '\\b', 'g'), ''), name).trim();
 }
 
 function toggleSelect(index, checked) {
@@ -1061,11 +1071,13 @@ function openShoppingList() {
 
   selectedRecipes.forEach(idx => {
     parseIngredients(recipes[idx].body).forEach(ing => {
+      if (isSkip(ing)) return;
       if (isPantry(ing)) {
         const keyword = PANTRY_KEYWORDS.find(k => ing.includes(k));
         if (keyword) pantrySet.add(keyword);
       } else {
         const parsed = parseIngredient(ing);
+        parsed.name = normalizeName(parsed.name);
         const key = (parsed.unitNorm || '') + '|' + parsed.name;
         if (ingredientMap.has(key)) {
           const existing = ingredientMap.get(key);
