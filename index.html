@@ -1003,9 +1003,61 @@ function parseIngredients(body) {
     .filter(Boolean);
 }
 
+const UNITS_LIST = ['כפות','כף','כפיות','כפית','כוסות','כוס','שיני','שן','ק"ג','גרם','מ"ל'];
+const UNIT_NORM  = {'כפות':'כף','כף':'כף','כפיות':'כפית','כפית':'כפית','כוסות':'כוס','כוס':'כוס','שיני':'שן','שן':'שן'};
+const UNIT_PLURAL= {'כף':'כפות','כפית':'כפיות','כוס':'כוסות','שן':'שיני'};
+const FRAC_VAL   = {'½':0.5,'¼':0.25,'¾':0.75,'⅓':1/3,'⅔':2/3};
+
+function parseDecimal(s) {
+  let integer = 0, frac = 0;
+  for (const c of s) {
+    if (FRAC_VAL[c] !== undefined) frac = FRAC_VAL[c];
+    else if (/\d/.test(c)) integer = integer * 10 + parseInt(c);
+  }
+  return integer + frac || null;
+}
+
+function formatDecimal(n) {
+  const i = Math.floor(n), f = Math.round((n - i) * 100) / 100;
+  let s = i > 0 ? String(i) : '';
+  if      (f === 0.5)  s += '½';
+  else if (f === 0.25) s += '¼';
+  else if (f === 0.75) s += '¾';
+  else if (f > 0.01)   s += '+';
+  return s || String(n);
+}
+
+function parseIngredient(line) {
+  const amountMatch = line.match(/^([0-9½¼¾⅓⅔]+)\s*/);
+  let rest = line, amountVal = null;
+  if (amountMatch) {
+    amountVal = parseDecimal(amountMatch[1]);
+    rest = line.slice(amountMatch[0].length);
+  }
+  let unitNorm = null;
+  for (const u of UNITS_LIST) {
+    if (rest.startsWith(u + ' ') || rest === u) {
+      unitNorm = UNIT_NORM[u] || u;
+      rest = rest.slice(u.length).trim();
+      break;
+    }
+  }
+  return { amountVal, unitNorm, name: rest.trim() };
+}
+
+function formatIngredient({ amountVal, unitNorm, name }) {
+  if (amountVal === null) return name;
+  let s = formatDecimal(amountVal);
+  if (unitNorm) {
+    const unit = amountVal > 1 ? (UNIT_PLURAL[unitNorm] || unitNorm) : unitNorm;
+    s += ' ' + unit;
+  }
+  return s + ' ' + name;
+}
+
 function openShoppingList() {
   const pantrySet = new Set();
-  const regularItems = [];
+  const ingredientMap = new Map(); // key -> {amountVal, unitNorm, name, canSum}
 
   selectedRecipes.forEach(idx => {
     parseIngredients(recipes[idx].body).forEach(ing => {
@@ -1013,7 +1065,21 @@ function openShoppingList() {
         const keyword = PANTRY_KEYWORDS.find(k => ing.includes(k));
         if (keyword) pantrySet.add(keyword);
       } else {
-        regularItems.push(ing);
+        const parsed = parseIngredient(ing);
+        const key = (parsed.unitNorm || '') + '|' + parsed.name;
+        if (ingredientMap.has(key)) {
+          const existing = ingredientMap.get(key);
+          if (existing.canSum && parsed.amountVal !== null) {
+            existing.amountVal += parsed.amountVal;
+          } else {
+            existing.canSum = false;
+            existing.name = ing + ' + ' + existing.name; // fallback: show both
+            existing.amountVal = null;
+            existing.unitNorm = null;
+          }
+        } else {
+          ingredientMap.set(key, { ...parsed, canSum: parsed.amountVal !== null });
+        }
       }
     });
   });
@@ -1021,10 +1087,10 @@ function openShoppingList() {
   const names = [...selectedRecipes].map(i => recipes[i].title).join(' + ');
   let html = `<div class="shop-for">עבור: ${names}</div>`;
 
-  if (regularItems.length) {
+  if (ingredientMap.size) {
     html += `<div class="shop-section-title">מרכיבים</div>`;
-    regularItems.forEach(ing => {
-      html += `<div class="shop-item">${ing}</div>`;
+    ingredientMap.forEach(entry => {
+      html += `<div class="shop-item">${formatIngredient(entry)}</div>`;
     });
   }
 
