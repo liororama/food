@@ -429,6 +429,136 @@
   aside::-webkit-scrollbar { width: 4px; }
   aside::-webkit-scrollbar-track { background: transparent; }
   aside::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+  /* ── SHOPPING LIST ── */
+  .item-check {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+    border: 1.5px solid var(--border);
+    border-radius: 4px;
+    appearance: none;
+    -webkit-appearance: none;
+    cursor: pointer;
+    position: relative;
+    transition: all 0.15s;
+    background: white;
+  }
+  .item-check:hover { border-color: var(--terracotta-light); }
+  .item-check:checked {
+    background: var(--terracotta);
+    border-color: var(--terracotta);
+  }
+  .item-check:checked::after {
+    content: '';
+    position: absolute;
+    left: 3px;
+    top: 1px;
+    width: 8px;
+    height: 5px;
+    border-left: 2px solid white;
+    border-bottom: 2px solid white;
+    transform: rotate(-45deg);
+  }
+
+  .shop-btn {
+    display: none;
+    align-items: center;
+    gap: 0.4rem;
+    background: var(--terracotta);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 7px 14px;
+    font-family: 'Heebo', sans-serif;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: background 0.15s;
+    white-space: nowrap;
+  }
+  .shop-btn:hover { background: var(--terracotta-light); }
+
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(26,22,18,0.5);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--warm-white);
+    border-radius: 12px;
+    width: 90%;
+    max-width: 520px;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 20px 60px rgba(26,22,18,0.25);
+    animation: fadeIn 0.2s ease;
+  }
+  .modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.2rem 1.5rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .modal-header h2 {
+    font-family: 'Frank Ruhl Libre', serif;
+    font-size: 1.3rem;
+    font-weight: 700;
+  }
+  .modal-close {
+    background: none;
+    border: none;
+    font-size: 1.1rem;
+    cursor: pointer;
+    color: var(--ink-muted);
+    padding: 4px 8px;
+    border-radius: 6px;
+    line-height: 1;
+  }
+  .modal-close:hover { background: var(--border); color: var(--ink); }
+  .modal-body {
+    padding: 1.5rem;
+    overflow-y: auto;
+  }
+  .shop-for {
+    color: var(--ink-muted);
+    font-size: 0.85rem;
+    margin-bottom: 1.2rem;
+  }
+  .shop-section-title {
+    font-size: 0.7rem;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+    margin: 1.2rem 0 0.5rem;
+  }
+  .shop-section-title:first-of-type { margin-top: 0; }
+  .shop-item {
+    padding: 0.5rem 0;
+    border-bottom: 1px dashed var(--border);
+    font-size: 0.92rem;
+    color: var(--ink-light);
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+  }
+  .shop-item:last-child { border-bottom: none; }
+  .shop-pantry-badge {
+    font-size: 0.7rem;
+    color: var(--sage);
+    background: var(--sage-pale);
+    border: 1px solid #c8d4be;
+    padding: 1px 8px;
+    border-radius: 10px;
+    flex-shrink: 0;
+  }
 </style>
 </head>
 <body>
@@ -436,6 +566,9 @@
 <header>
   <div class="logo" onclick="showWelcome()">🍳 <span>ספר</span> המתכונים</div>
   <div class="header-right">
+    <button class="shop-btn" id="shop-btn" onclick="openShoppingList()">
+      🛒 רשימת קניות (<span id="shop-count">0</span>)
+    </button>
     <div class="search-wrap">
       <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
       <input id="search" type="text" placeholder="חיפוש מתכון..." oninput="filterRecipes()" autocomplete="off">
@@ -457,6 +590,16 @@
       <p>בחר מתכון מהרשימה כדי להתחיל</p>
     </div>
   </main>
+</div>
+
+<div class="modal-overlay" id="modal-overlay" onclick="closeShoppingList()">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <h2>🛒 רשימת קניות</h2>
+      <button class="modal-close" onclick="closeShoppingList()">✕</button>
+    </div>
+    <div class="modal-body" id="modal-body"></div>
+  </div>
 </div>
 
 <script>
@@ -740,16 +883,19 @@ function renderSidebar(filtered) {
   list.innerHTML = Object.entries(groups).map(([cat, items]) => `
     <div class="category-section">
       <div class="category-label">${cat}</div>
-      ${items.map(r => `
+      ${items.map(r => {
+        const idx = recipes.indexOf(r);
+        return `
         <div class="recipe-item ${r === activeRecipe ? 'active' : ''}"
-             onclick="showRecipe(${recipes.indexOf(r)})">
-          <div class="recipe-dot"></div>
+             onclick="showRecipe(${idx})">
+          <input type="checkbox" class="item-check" ${selectedRecipes.has(idx) ? 'checked' : ''}
+            onclick="event.stopPropagation(); toggleSelect(${idx}, this.checked)">
           <div class="recipe-item-text">
             <div class="recipe-item-name">${r.title || r.filename}</div>
             <div class="recipe-item-meta">${r.time || ''} ${r.servings ? '· ' + r.servings + ' מנות' : ''}</div>
           </div>
-        </div>
-      `).join('')}
+        </div>`;
+      }).join('')}
     </div>
   `).join('');
 }
@@ -827,6 +973,74 @@ function showWelcome() {
       <p>בחר מתכון מהרשימה כדי להתחיל</p>
     </div>
   `;
+}
+
+// ── SHOPPING LIST ─────────────────────────────────────────────────────────
+const selectedRecipes = new Set();
+
+// Pantry staples: show as "required" without amount
+const PANTRY_KEYWORDS = ['מלח', 'סוכר', 'כמון', 'פפריקה', 'חומץ'];
+
+function isPantry(ingredient) {
+  return PANTRY_KEYWORDS.some(k => ingredient.includes(k));
+}
+
+function toggleSelect(index, checked) {
+  if (checked) selectedRecipes.add(index);
+  else selectedRecipes.delete(index);
+  const btn = document.getElementById('shop-btn');
+  const count = selectedRecipes.size;
+  btn.style.display = count > 0 ? 'flex' : 'none';
+  document.getElementById('shop-count').textContent = count;
+}
+
+function parseIngredients(body) {
+  const match = body.match(/##\s*מצרכים\n([\s\S]*?)(?=\n##|$)/);
+  if (!match) return [];
+  return match[1].split('\n')
+    .filter(l => l.trim().startsWith('-'))
+    .map(l => l.replace(/^-\s*/, '').trim())
+    .filter(Boolean);
+}
+
+function openShoppingList() {
+  const pantrySet = new Set();
+  const regularItems = [];
+
+  selectedRecipes.forEach(idx => {
+    parseIngredients(recipes[idx].body).forEach(ing => {
+      if (isPantry(ing)) {
+        const keyword = PANTRY_KEYWORDS.find(k => ing.includes(k));
+        if (keyword) pantrySet.add(keyword);
+      } else {
+        regularItems.push(ing);
+      }
+    });
+  });
+
+  const names = [...selectedRecipes].map(i => recipes[i].title).join(' + ');
+  let html = `<div class="shop-for">עבור: ${names}</div>`;
+
+  if (regularItems.length) {
+    html += `<div class="shop-section-title">מרכיבים</div>`;
+    regularItems.forEach(ing => {
+      html += `<div class="shop-item">${ing}</div>`;
+    });
+  }
+
+  if (pantrySet.size) {
+    html += `<div class="shop-section-title">תבלינים ומלאי בסיסי</div>`;
+    [...pantrySet].forEach(p => {
+      html += `<div class="shop-item"><span class="shop-pantry-badge">נדרש</span>${p}</div>`;
+    });
+  }
+
+  document.getElementById('modal-body').innerHTML = html;
+  document.getElementById('modal-overlay').classList.add('open');
+}
+
+function closeShoppingList() {
+  document.getElementById('modal-overlay').classList.remove('open');
 }
 
 // ── INIT ──────────────────────────────────────────────────────────────────
