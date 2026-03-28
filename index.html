@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>המתכונים שלי</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@300;400;500;700;900&family=Heebo:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js"></script>
+<style>
+  :root {
+    --cream: #f7f3ed;
+    --warm-white: #faf8f4;
+    --ink: #1a1612;
+    --ink-light: #4a3f35;
+    --ink-muted: #8a7a6e;
+    --terracotta: #c4622d;
+    --terracotta-light: #e8956a;
+    --terracotta-pale: #f5e8df;
+    --sage: #6b7c5e;
+    --sage-pale: #edf0e9;
+    --gold: #c9972b;
+    --border: #e0d6c8;
+    --shadow: rgba(26,22,18,0.08);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Heebo', sans-serif;
+    background: var(--cream);
+    color: var(--ink);
+    min-height: 100vh;
+    font-size: 16px;
+    line-height: 1.6;
+  }
+
+  /* ── HEADER ── */
+  header {
+    background: var(--ink);
+    color: var(--cream);
+    padding: 0 2.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 64px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    border-bottom: 3px solid var(--terracotta);
+  }
+
+  .logo {
+    font-family: 'Frank Ruhl Libre', serif;
+    font-size: 1.5rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+  }
+  .logo span { color: var(--terracotta-light); }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  /* ── SEARCH ── */
+  .search-wrap {
+    position: relative;
+  }
+  .search-wrap svg {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--ink-muted);
+    pointer-events: none;
+  }
+  #search {
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 8px;
+    color: var(--cream);
+    font-family: 'Heebo', sans-serif;
+    font-size: 0.9rem;
+    padding: 7px 36px 7px 14px;
+    width: 220px;
+    outline: none;
+    transition: background 0.2s, border-color 0.2s;
+  }
+  #search::placeholder { color: rgba(247,243,237,0.45); }
+  #search:focus {
+    background: rgba(255,255,255,0.18);
+    border-color: var(--terracotta-light);
+  }
+
+  /* ── LAYOUT ── */
+  .app {
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    min-height: calc(100vh - 64px);
+  }
+
+  /* ── SIDEBAR ── */
+  aside {
+    background: var(--warm-white);
+    border-left: 1px solid var(--border);
+    overflow-y: auto;
+    padding: 1.5rem 0;
+  }
+
+  .category-section { margin-bottom: 0.5rem; }
+
+  .category-label {
+    font-size: 0.7rem;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    color: var(--ink-muted);
+    text-transform: uppercase;
+    padding: 0.6rem 1.5rem 0.3rem;
+  }
+
+  .recipe-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.65rem 1.5rem;
+    cursor: pointer;
+    border-right: 3px solid transparent;
+    transition: background 0.15s, border-color 0.15s;
+    position: relative;
+  }
+  .recipe-item:hover { background: var(--terracotta-pale); }
+  .recipe-item.active {
+    background: var(--terracotta-pale);
+    border-right-color: var(--terracotta);
+  }
+
+  .recipe-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    background: var(--terracotta-light);
+  }
+  .recipe-item.active .recipe-dot { background: var(--terracotta); }
+
+  .recipe-item-text { flex: 1; min-width: 0; }
+  .recipe-item-name {
+    font-size: 0.92rem;
+    font-weight: 400;
+    color: var(--ink);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .recipe-item.active .recipe-item-name { font-weight: 500; color: var(--terracotta); }
+
+  .recipe-item-meta {
+    font-size: 0.74rem;
+    color: var(--ink-muted);
+  }
+
+  /* Tags filter */
+  .tags-filter {
+    padding: 0 1.5rem 1rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+  .tag-btn {
+    font-family: 'Heebo', sans-serif;
+    font-size: 0.72rem;
+    padding: 3px 10px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    background: white;
+    color: var(--ink-light);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .tag-btn:hover { border-color: var(--terracotta); color: var(--terracotta); }
+  .tag-btn.active {
+    background: var(--terracotta);
+    border-color: var(--terracotta);
+    color: white;
+  }
+
+  .filter-label {
+    font-size: 0.7rem;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    color: var(--ink-muted);
+    text-transform: uppercase;
+    padding: 0.8rem 1.5rem 0.4rem;
+  }
+
+  .divider {
+    height: 1px;
+    background: var(--border);
+    margin: 0.75rem 1.5rem;
+  }
+
+  .no-results {
+    padding: 2rem 1.5rem;
+    color: var(--ink-muted);
+    font-size: 0.85rem;
+    text-align: center;
+  }
+
+  /* ── MAIN CONTENT ── */
+  main {
+    overflow-y: auto;
+    padding: 3rem 3.5rem;
+    max-width: 780px;
+  }
+
+  /* Welcome screen */
+  .welcome {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: calc(100vh - 160px);
+    text-align: center;
+    gap: 1.5rem;
+    animation: fadeIn 0.4s ease;
+  }
+  .welcome-icon {
+    font-size: 4rem;
+    line-height: 1;
+  }
+  .welcome h2 {
+    font-family: 'Frank Ruhl Libre', serif;
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--ink);
+  }
+  .welcome p {
+    color: var(--ink-muted);
+    font-size: 1rem;
+    max-width: 320px;
+  }
+
+  /* Recipe view */
+  .recipe-view { animation: fadeIn 0.3s ease; }
+
+  .recipe-header {
+    margin-bottom: 2.5rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 2px solid var(--border);
+  }
+
+  .recipe-category-badge {
+    display: inline-block;
+    font-size: 0.72rem;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--terracotta);
+    background: var(--terracotta-pale);
+    padding: 4px 12px;
+    border-radius: 20px;
+    margin-bottom: 0.9rem;
+  }
+
+  .recipe-title {
+    font-family: 'Frank Ruhl Libre', serif;
+    font-size: 2.6rem;
+    font-weight: 900;
+    color: var(--ink);
+    line-height: 1.15;
+    margin-bottom: 1rem;
+  }
+
+  .recipe-meta-row {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+  }
+
+  .meta-pill {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.85rem;
+    color: var(--ink-light);
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 5px 12px;
+  }
+  .meta-pill svg { color: var(--terracotta); flex-shrink: 0; }
+
+  .recipe-tags-row {
+    margin-top: 0.9rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+  .recipe-tag {
+    font-size: 0.72rem;
+    color: var(--sage);
+    background: var(--sage-pale);
+    border: 1px solid #c8d4be;
+    padding: 3px 10px;
+    border-radius: 20px;
+  }
+
+  /* Markdown body */
+  .recipe-body { color: var(--ink-light); }
+
+  .recipe-body h1 { display: none; }
+
+  .recipe-body h2 {
+    font-family: 'Frank Ruhl Libre', serif;
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: var(--ink);
+    margin: 2rem 0 0.8rem;
+    padding-bottom: 0.4rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .recipe-body ul {
+    list-style: none;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 0.4rem 1.5rem;
+    margin-bottom: 1rem;
+  }
+  .recipe-body ul li {
+    font-size: 0.93rem;
+    padding: 0.4rem 0;
+    border-bottom: 1px dashed var(--border);
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+  }
+  .recipe-body ul li::before {
+    content: '•';
+    color: var(--terracotta);
+    font-size: 1.1rem;
+    flex-shrink: 0;
+  }
+
+  .recipe-body ol {
+    list-style: none;
+    padding: 0;
+    counter-reset: steps;
+  }
+  .recipe-body ol li {
+    counter-increment: steps;
+    padding: 1rem 0 1rem 0;
+    padding-right: 3.2rem;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.93rem;
+    line-height: 1.7;
+    position: relative;
+  }
+  .recipe-body ol li:last-child { border-bottom: none; }
+  .recipe-body ol li::before {
+    content: counter(steps);
+    position: absolute;
+    right: 0;
+    top: 1rem;
+    width: 2rem;
+    height: 2rem;
+    background: var(--terracotta);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Frank Ruhl Libre', serif;
+    font-weight: 700;
+    font-size: 0.9rem;
+  }
+  .recipe-body ol li strong {
+    color: var(--ink);
+    font-weight: 500;
+  }
+
+  .recipe-body blockquote {
+    background: linear-gradient(135deg, var(--terracotta-pale), #fef6ef);
+    border-right: 4px solid var(--terracotta);
+    border-left: none;
+    border-radius: 0 8px 8px 0;
+    padding: 1rem 1.2rem 1rem 1rem;
+    margin: 1.5rem 0;
+    font-size: 0.9rem;
+    color: var(--ink-light);
+    font-style: italic;
+  }
+  .recipe-body blockquote p { margin: 0; }
+
+  .recipe-body p {
+    margin-bottom: 0.8rem;
+    font-size: 0.95rem;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 768px) {
+    .app { grid-template-columns: 1fr; }
+    aside { max-height: 260px; border-left: none; border-bottom: 1px solid var(--border); }
+    main { padding: 2rem 1.5rem; max-width: 100%; }
+    #search { width: 160px; }
+    header { padding: 0 1rem; }
+    .logo { font-size: 1.2rem; }
+    .recipe-title { font-size: 2rem; }
+  }
+
+  /* Scrollbar styling */
+  aside::-webkit-scrollbar { width: 4px; }
+  aside::-webkit-scrollbar-track { background: transparent; }
+  aside::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo" onclick="showWelcome()">🍳 <span>ספר</span> המתכונים</div>
+  <div class="header-right">
+    <div class="search-wrap">
+      <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input id="search" type="text" placeholder="חיפוש מתכון..." oninput="filterRecipes()" autocomplete="off">
+    </div>
+  </div>
+</header>
+
+<div class="app">
+  <aside id="sidebar">
+    <div class="filter-label">תגיות</div>
+    <div class="tags-filter" id="tags-filter"></div>
+    <div class="divider"></div>
+    <div id="recipe-list"></div>
+  </aside>
+  <main id="main-content">
+    <div class="welcome" id="welcome-screen">
+      <div class="welcome-icon">🥘</div>
+      <h2>ספר המתכונים שלי</h2>
+      <p>בחר מתכון מהרשימה כדי להתחיל</p>
+    </div>
+  </main>
+</div>
+
+<script>
+// ── RECIPE DATA ──────────────────────────────────────────────────────────
+// In a real server environment this would read from the filesystem.
+// Here recipes are embedded directly from the markdown files.
+
+const RECIPES_RAW = [
+  {
+    filename: 'מטבוחה-חריפה.md',
+    content: `---
+title: מטבוחה חריפה
+category: ממרחים
+tags: [מרוקאי, חריף, צמחוני, ביסים]
+servings: 6
+time: 50 דקות
+---
+
+# מטבוחה חריפה
+
+רוטב עגבניות מבושל עם פלפל חריף — קלאסיקה מרוקאית שמרוחה על לחם טרי.
+
+## מצרכים
+
+- 6 עגבניות בשלות גדולות
+- 2 פלפל אדום גדול
+- 3 פלפל חריף (כוסברה / ג'לפניו)
+- 4 כפות שמן זית
+- 5 שיני שום
+- 1 כפית כמון
+- 1 כפית פפריקה מתוקה
+- ½ כפית פפריקה חריפה
+- 1 כפית מלח
+- ½ כפית סוכר
+- ¼ כוס עלי כוסברה טריה
+
+## הוראות הכנה
+
+1. **צלייה על להבה** — מניחים את העגבניות, הפלפל האדום והפלפל החריף ישירות על הלהבה הגבוהה וצולים עד שהקליפה משחירה ומתפצחת מכל הצדדים. הופכים מדי פעם עם מלקחיים.
+
+2. **קילוף** — מעבירים את הירקות הצלויים לקערה ומכסים בניילון נצמד למשך 10 דקות. לאחר מכן מקלפים את הקליפה השרופה, מסירים הגרעינים מהפלפלים ומנקים בעדינות.
+
+3. **קיצוץ גס** — קוצצים את הירקות הקלופים בסכין לחתיכות גסות — לא בבלנדר. המטבוחה צריכה להיות עם מרקם גס ולא חלק לגמרי.
+
+4. **בישול עם שמן ושום** — מחממים שמן זית במחבת גדולה על אש בינונית. מוסיפים שום כתוש ומטגנים דקה עד שמזהיב. מוסיפים את הירקות הקצוצים ומערבבים.
+
+5. **תיבול ובישול ארוך** — מוסיפים כמון, פפריקה מתוקה, פפריקה חריפה, מלח וסוכר. מבשלים על אש נמוכה תוך ערבוב מדי פעם כ-40 דקות עד שהנוזלים מתאדים והמטבוחה מסמיכה ומבריקה בשמן.
+
+6. **הגשה** — מצננים מעט, מפזרים כוסברה קצוצה ומגישים עם לחם פיתה טרי או לחם מרוקאי (כסרה). טעים גם חם וגם בטמפרטורת החדר.
+
+## טיפים
+
+> הסוד: אל תחסכו בזמן הבישול — ככל שמבשלים יותר זמן, הטעמים מתרכזים ומעמיקים. רמת החריפות ניתנת לכוונון לפי כמות הפלפל החריף.`
+  },
+  {
+    filename: 'סלט-גזר-מרוקאי.md',
+    content: `---
+title: סלט גזר מרוקאי
+category: סלטים
+tags: [מרוקאי, צמחוני, קל, ביסים]
+servings: 4
+time: 25 דקות
+---
+
+# סלט גזר מרוקאי
+
+סלט גזר מבושל עם כמון ולימון — פשוט, עסיסי ומרענן.
+
+## מצרכים
+
+- 6 גזרים
+- 3 כפות שמן זית
+- 3 כפות מיץ לימון טרי
+- 3 שיני שום כתוש
+- 1½ כפית כמון
+- 1 כפית פפריקה מתוקה
+- ½ כפית פפריקה חריפה
+- ¾ כפית מלח
+- ½ כפית סוכר
+- ½ כוס עלי כוסברה טריה קצוצים
+
+## הוראות הכנה
+
+1. **הכנת הגזר** — מקלפים את הגזרים וחותכים לפרוסות אלכסוניות בעובי כסנטימטר, או לאורך לרצועות. חיתוך אחיד מבטיח בישול שווה.
+
+2. **בישול הגזר** — מכניסים את הגזר לסיר עם מים מומלחים ומבשלים עד שהוא רך אך עדיין מוחזק — לא רגיש מדי. בודקים בקיסם (כ-8 דקות).
+
+3. **ניקוז וקירור** — מסננים היטב ומניחים להתקרר לגמרי. גזר חם יספוג שמן אחרת ויאבד את הטקסטורה.
+
+4. **הכנת הרוטב** — מערבבים בקערה שמן זית, מיץ לימון, שום כתוש, כמון, פפריקה מתוקה, פפריקה חריפה, מלח וסוכר עד לרוטב אחיד ומשוזר היטב.
+
+5. **ערבוב ומרינדה** — מוסיפים את הגזר הקר לרוטב ומערבבים היטב לציפוי שווה. מכסים ומכניסים למקרר לפחות שעה כדי שהטעמים יחלחלו.
+
+6. **הגשה** — לפני ההגשה מפזרים כוסברה קצוצה בנדיבות ומגישים קר או בטמפרטורת החדר. מצוין כסלט עצמאי, כצידי לדגים, או כחלק ממגש מזה.
+
+## טיפים
+
+> ניתן להוסיף מעט חומץ לבן (כפית) לטעם חמצמץ יותר. המתנה של שעה לפחות במקרר היא חובה — הגזר יספוג את הרוטב ויהפוך עשיר יותר.`
+  },
+  {
+    filename: 'סלט-סלק-לימון.md',
+    content: `---
+title: סלט סלק בלימון
+category: סלטים
+tags: [מרוקאי, צמחוני, קל, ביסים, לימון]
+servings: 4
+time: 55 דקות
+---
+
+# סלט סלק בלימון
+
+סלט סלק מרוקאי קלאסי עם לימון טרי, שום וכמון — רענן, עסיסי ומלא צבע.
+
+## מצרכים
+
+- 4 סלק בינוני
+- 4 כפות מיץ לימון טרי (כלימון שלם)
+- 1 כפית קליפת לימון מגוררת
+- 3 כפות שמן זית
+- 3 שיני שום כתוש
+- 1 כפית כמון
+- ½ כפית פפריקה מתוקה
+- ¼ כפית פפריקה חריפה
+- ¾ כפית מלח
+- ¼ כוס עלי כוסברה טריה קצוצים
+
+## הוראות הכנה
+
+1. **בישול הסלק** — שוטפים את הסלק היטב מבלי לקלף. מכניסים לסיר עם מים קרים ומבשלים כ-45 דקות עד שהסלק רך לגמרי.
+
+2. **קילוף וחיתוך** — מצננים את הסלק, מקלפים (מומלץ עם כפפות) וחותכים לקוביות קטנות או פרוסות.
+
+3. **הכנת הרוטב** — מערבבים בקערה מיץ לימון, קליפת לימון, שמן זית, שום כתוש, כמון, פפריקה מתוקה, פפריקה חריפה ומלח.
+
+4. **ערבוב** — מוסיפים את הסלק לרוטב ומערבבים היטב. טועמים ומתקנים תיבול לפי הצורך.
+
+5. **קירור והגשה** — מכניסים למקרר לפחות שעה. מפזרים כוסברה קצוצה לפני ההגשה.
+
+## טיפים
+
+> הסלט טעים הרבה יותר ביום למחרת — הסלק סופג את הרוטב ומתעצם בטעם. שמרו במקרר עד 3 ימים.`
+  },
+  {
+    filename: 'סלט-סלק-מרוקאי.md',
+    content: `---
+title: סלט סלק מרוקאי
+category: סלטים
+tags: [מרוקאי, צמחוני, קל, ביסים]
+servings: 4
+time: 55 דקות
+---
+
+# סלט סלק מרוקאי
+
+סלט סלק מבושל עם כמון וחומץ — צבע עמוק וטעם עשיר.
+
+## מצרכים
+
+- 4 סלק בינוני
+- 3 כפות שמן זית
+- 2 כפות מיץ לימון טרי
+- 1 כף חומץ לבן
+- 3 שיני שום כתוש
+- 1½ כפית כמון
+- 1 כפית פפריקה מתוקה
+- ½ כפית פפריקה חריפה
+- ¾ כפית מלח
+- ½ כפית סוכר
+- ¼ כוס עלי כוסברה טריה קצוצים
+
+## הוראות הכנה
+
+1. **בישול הסלק עם הקליפה** — שוטפים את הסלק היטב בלי לקלף. מכניסים לסיר עם מים קרים וכפית חומץ למניעת דעיכת צבע. מבשלים עד שהסלק רך לגמרי (כ-45 דקות).
+
+2. **קילוף וחיתוך** — מצננים את הסלק, מצננים תחת מים קר לכמה שניות ומקלפים. חותכים לקוביות או פרוסות. כדאי להשתמש בכפפות אחד פעם.
+
+3. **הכנת הרוטב** — מערבבים שמן זית, מיץ לימון, חומץ לבן, שום כתוש, כמון, פפריקה מתוקה, פפריקה חריפה, מלח וסוכר בקערה קטנה עד לרוטב אחיד.
+
+4. **ערבוב ומרינדה** — מוסיפים את הסלק לרוטב ומערבבים. טועמים ומתקנים תיבול לפי הצורך. מכניסים למקרר לפחות שעה.
+
+5. **הגשה** — מפזרים כוסברה קצוצה ומגישים קר. הסלט נשמר יפה במקרר עד 3 ימים.
+
+## טיפים
+
+> חשוב: אל תקלפו את הסלק לפני הבישול — הקליפה שומרת על הצבע העמוק. מומלץ ללבוש כפפות בעת הקילוף אחרי הבישול.`
+  }
+];
+
+// ── PARSE FRONTMATTER ─────────────────────────────────────────────────────
+function parseFrontmatter(raw) {
+  const match = raw.match(/^---\n([\s\S]*?)\n---\n([\s\S]*)$/);
+  if (!match) return { meta: {}, body: raw };
+  const meta = {};
+  match[1].split('\n').forEach(line => {
+    const [k, ...vs] = line.split(':');
+    if (!k) return;
+    let v = vs.join(':').trim();
+    if (v.startsWith('[') && v.endsWith(']')) {
+      v = v.slice(1,-1).split(',').map(t => t.trim());
+    }
+    meta[k.trim()] = v;
+  });
+  return { meta, body: match[2] };
+}
+
+// ── BUILD RECIPE LIST ─────────────────────────────────────────────────────
+const recipes = RECIPES_RAW.map(r => {
+  const { meta, body } = parseFrontmatter(r.content);
+  return { ...meta, body, filename: r.filename,
+    tags: Array.isArray(meta.tags) ? meta.tags : (meta.tags ? [meta.tags] : []) };
+});
+
+let activeTag = null;
+let activeRecipe = null;
+
+// ── ALL TAGS ──────────────────────────────────────────────────────────────
+function getAllTags() {
+  const set = new Set();
+  recipes.forEach(r => r.tags.forEach(t => set.add(t)));
+  return [...set];
+}
+
+// ── RENDER SIDEBAR ────────────────────────────────────────────────────────
+function renderSidebar(filtered) {
+  const list = document.getElementById('recipe-list');
+  const groups = {};
+  filtered.forEach(r => {
+    const cat = r.category || 'כללי';
+    if (!groups[cat]) groups[cat] = [];
+    groups[cat].push(r);
+  });
+
+  if (filtered.length === 0) {
+    list.innerHTML = '<div class="no-results">לא נמצאו מתכונים</div>';
+    return;
+  }
+
+  list.innerHTML = Object.entries(groups).map(([cat, items]) => `
+    <div class="category-section">
+      <div class="category-label">${cat}</div>
+      ${items.map(r => `
+        <div class="recipe-item ${r === activeRecipe ? 'active' : ''}"
+             onclick="showRecipe(${recipes.indexOf(r)})">
+          <div class="recipe-dot"></div>
+          <div class="recipe-item-text">
+            <div class="recipe-item-name">${r.title || r.filename}</div>
+            <div class="recipe-item-meta">${r.time || ''} ${r.servings ? '· ' + r.servings + ' מנות' : ''}</div>
+          </div>
+        </div>
+      `).join('')}
+    </div>
+  `).join('');
+}
+
+// ── RENDER TAGS ───────────────────────────────────────────────────────────
+function renderTags() {
+  const tags = getAllTags();
+  const wrap = document.getElementById('tags-filter');
+  wrap.innerHTML = tags.map(t => `
+    <button class="tag-btn ${activeTag === t ? 'active' : ''}" onclick="toggleTag('${t}')">${t}</button>
+  `).join('');
+}
+
+function toggleTag(tag) {
+  activeTag = activeTag === tag ? null : tag;
+  renderTags();
+  filterRecipes();
+}
+
+// ── FILTER ────────────────────────────────────────────────────────────────
+function filterRecipes() {
+  const q = document.getElementById('search').value.trim().toLowerCase();
+  let filtered = recipes;
+  if (activeTag) filtered = filtered.filter(r => r.tags.includes(activeTag));
+  if (q) filtered = filtered.filter(r =>
+    (r.title||'').toLowerCase().includes(q) ||
+    (r.category||'').toLowerCase().includes(q) ||
+    r.tags.some(t => t.toLowerCase().includes(q)) ||
+    r.body.toLowerCase().includes(q)
+  );
+  renderSidebar(filtered);
+}
+
+// ── SHOW RECIPE ───────────────────────────────────────────────────────────
+function showRecipe(index) {
+  activeRecipe = recipes[index];
+  filterRecipes();
+
+  const r = activeRecipe;
+  const html = marked.parse(r.body);
+
+  const tagsHtml = r.tags.map(t =>
+    `<span class="recipe-tag">${t}</span>`
+  ).join('');
+
+  document.getElementById('main-content').innerHTML = `
+    <div class="recipe-view">
+      <div class="recipe-header">
+        ${r.category ? `<div class="recipe-category-badge">${r.category}</div>` : ''}
+        <h1 class="recipe-title">${r.title || r.filename}</h1>
+        <div class="recipe-meta-row">
+          ${r.time ? `<div class="meta-pill">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            ${r.time}
+          </div>` : ''}
+          ${r.servings ? `<div class="meta-pill">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            ${r.servings} מנות
+          </div>` : ''}
+        </div>
+        ${tagsHtml ? `<div class="recipe-tags-row">${tagsHtml}</div>` : ''}
+      </div>
+      <div class="recipe-body">${html}</div>
+    </div>
+  `;
+}
+
+function showWelcome() {
+  activeRecipe = null;
+  filterRecipes();
+  document.getElementById('main-content').innerHTML = `
+    <div class="welcome" id="welcome-screen">
+      <div class="welcome-icon">🥘</div>
+      <h2>ספר המתכונים שלי</h2>
+      <p>בחר מתכון מהרשימה כדי להתחיל</p>
+    </div>
+  `;
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────
+renderTags();
+filterRecipes();
+</script>
+</body>
+</html>
